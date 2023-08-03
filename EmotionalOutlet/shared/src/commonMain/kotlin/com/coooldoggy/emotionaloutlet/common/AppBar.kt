@@ -1,4 +1,4 @@
-package com.coooldoggy.emotionaloutlet
+package com.coooldoggy.emotionaloutlet.common
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.coooldoggy.emotionaloutlet.common.onClick
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 
