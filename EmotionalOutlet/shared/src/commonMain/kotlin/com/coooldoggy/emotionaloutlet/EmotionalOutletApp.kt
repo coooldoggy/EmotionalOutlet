@@ -33,28 +33,47 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.arkivanov.decompose.router.stack.push
 import com.coooldoggy.emotionaloutlet.common.AppBar
 import com.coooldoggy.emotionaloutlet.common.AppBarBackIcon
 import com.coooldoggy.emotionaloutlet.common.TriangleEdgeShape
 import com.coooldoggy.emotionaloutlet.common.onClick
+import io.github.xxfast.decompose.router.Router
+import io.github.xxfast.decompose.router.content.RoutedContent
+import io.github.xxfast.decompose.router.rememberRouter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.skia.skottie.Logger
 
 val store = CoroutineScope(SupervisorJob()).createStore()
-val myUser = "Me"
+const val myUser = "Me"
 
 @Composable
 fun EmotionalOutletApp() {
+    val navigator: Router<ScreenRoute> = rememberRouter(ScreenRoute::class, stack = listOf(ScreenRoute.Start))
+    RoutedContent(router = navigator) { screen ->
+        when (screen) {
+            ScreenRoute.Start -> StartScreen(onClickChatting = {
+                navigator.push(ScreenRoute.Chat)
+            })
+            ScreenRoute.Chat -> ChatMain()
+        }
+    }
+}
+
+@Composable
+fun ChatMain() {
+    val state by store.stateFlow.collectAsState()
     Scaffold(
         topBar = {
             AppBar(
@@ -64,27 +83,20 @@ fun EmotionalOutletApp() {
         },
     ) { _innerPadding ->
         Box(modifier = Modifier.padding(_innerPadding)) {
-            ChatMain()
-        }
-    }
-}
-
-@Composable
-fun ChatMain() {
-    val state by store.stateFlow.collectAsState()
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            Box(Modifier.weight(1f)) {
-                Messages(state.messages)
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    Box(Modifier.weight(1f)) {
+                        Messages(state.messages)
+                    }
+                    SendMessage(
+                        sendMessage = ::sendMessage,
+                        inputMessage = state.inputMessage,
+                        onMessageChanged = ::onMessageChanged,
+                    )
+                }
             }
-            SendMessage(
-                sendMessage = ::sendMessage,
-                inputMessage = state.inputMessage,
-                onMessageChanged = ::onMessageChanged,
-            )
         }
     }
 }
@@ -105,6 +117,7 @@ private fun onMessageChanged(text: String) {
     )
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SendMessage(
     sendMessage: (String) -> Unit,
@@ -115,15 +128,16 @@ fun SendMessage(
     com.coooldoggy.emotionaloutlet.common.BasicTextField(
         modifier = Modifier.fillMaxWidth()
             .height(42.dp)
-            .background(MaterialTheme.colors.background),
-//            .onKeyEvent { event ->
-//                if (event.key == Key.Enter) {
-//                    sendMessage(inputText)
-//                    true
-//                } else {
-//                    false
-//                }
-//            },
+            .background(MaterialTheme.colors.background)
+            .onKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown && event.key == Key.Enter) {
+                    sendMessage(inputText)
+                    inputText = ""
+                    true
+                } else {
+                    false
+                }
+            },
         value = inputText,
         valueChangeListener = {
             inputText = it
@@ -134,6 +148,7 @@ fun SendMessage(
                 modifier = Modifier
                     .onClick {
                         sendMessage(inputText)
+                        inputText = ""
                     }
                     .padding(10.dp),
                 verticalAlignment = Alignment.CenterVertically,

@@ -3,8 +3,6 @@ package com.coooldoggy.emotionaloutlet
 sealed interface Action {
     data class SendMessage(val message: Message) : Action
     data class InputMessage(val message: String) : Action
-
-    object ClearMessage : Action
 }
 
 data class State(
@@ -22,11 +20,6 @@ fun chatReducer(state: State, action: Action): State =
         is Action.InputMessage -> {
             state.copy(
                 inputMessage = action.message,
-            )
-        }
-        is Action.ClearMessage -> {
-            state.copy(
-                inputMessage = "",
             )
         }
     }
