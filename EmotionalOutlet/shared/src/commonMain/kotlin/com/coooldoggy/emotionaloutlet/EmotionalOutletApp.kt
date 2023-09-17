@@ -1,5 +1,10 @@
 package com.coooldoggy.emotionaloutlet
 
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.repeatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +18,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,12 +36,15 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -52,6 +59,7 @@ import io.github.xxfast.decompose.router.content.RoutedContent
 import io.github.xxfast.decompose.router.rememberRouter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 
@@ -60,12 +68,14 @@ const val myUser = "Me"
 
 @Composable
 fun EmotionalOutletApp() {
-    val navigator: Router<ScreenRoute> = rememberRouter(ScreenRoute::class, stack = listOf(ScreenRoute.Start))
+    val navigator: Router<ScreenRoute> =
+        rememberRouter(ScreenRoute::class, stack = listOf(ScreenRoute.Start))
     RoutedContent(router = navigator) { screen ->
         when (screen) {
             ScreenRoute.Start -> StartScreen(onClickChatting = {
                 navigator.push(ScreenRoute.Chat)
             })
+
             ScreenRoute.Chat -> ChatMain()
         }
     }
@@ -169,19 +179,21 @@ fun SendMessage(
 @Composable
 internal inline fun Messages(messages: List<Message>) {
     val listState = rememberLazyListState()
-    if (messages.isNotEmpty()) {
-        LaunchedEffect(messages.last()) {
-            listState.animateScrollToItem(messages.lastIndex, scrollOffset = 2)
-        }
-    }
+//    if (messages.isNotEmpty()) {
+//        LaunchedEffect(messages.last()) {
+//            listState.animateScrollToItem(messages.lastIndex, scrollOffset = 2)
+//        }
+//    }
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(start = 4.dp, end = 4.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         state = listState,
     ) {
         item { Spacer(Modifier.size(20.dp)) }
-        items(messages, key = { it.id }) {
-            ChatMessage(isMyMessage = true, it)
+        item {
+            if (messages.isNotEmpty()) {
+                ChatMessage(messages.last())
+            }
         }
         item {
             Box(Modifier.height(70.dp))
@@ -202,6 +214,92 @@ fun UserPic() {
         painter = painter,
         contentDescription = "User picture",
     )
+}
+
+@Composable
+fun ChatMessage(message: Message) {
+    var startAnimation by remember {
+        mutableStateOf(false)
+    }
+
+    var messageLayoutCoordinates by remember {
+        mutableStateOf<LayoutCoordinates?>(null)
+    }
+
+    val scale by animateFloatAsState(
+        targetValue = if (startAnimation) 0f else 1f,
+        animationSpec = repeatable(
+            iterations = 1,
+            animation = tween(durationMillis = 200, easing = LinearOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        finishedListener = {
+            //TODO FIXME 다시 나타나는 이슈
+            messageLayoutCoordinates = null
+        }
+    )
+
+
+    LaunchedEffect(messageLayoutCoordinates) {
+        delay(300)
+        startAnimation = messageLayoutCoordinates?.isAttached == true
+    }
+
+    Box(
+        modifier = Modifier.fillMaxWidth()
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
+        contentAlignment = Alignment.CenterEnd
+    ) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Column {
+                Box(
+                    Modifier.clip(
+                        RoundedCornerShape(
+                            10.dp,
+                            10.dp,
+                            10.dp,
+                            0.dp,
+                        ),
+                    )
+                        .background(color = ChatColors.MY_MESSAGE)
+                        .padding(start = 10.dp, top = 5.dp, end = 10.dp, bottom = 5.dp)
+                        .onGloballyPositioned {
+                            messageLayoutCoordinates = it
+                        },
+                ) {
+                    Column {
+                        Spacer(Modifier.size(3.dp))
+                        Text(
+                            text = message.text,
+                            style = MaterialTheme.typography.body1.copy(
+                                fontSize = 18.sp,
+                                letterSpacing = 0.sp,
+                            ),
+                        )
+                        Spacer(Modifier.size(4.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.End,
+                            modifier = Modifier.align(Alignment.End),
+                        ) {
+                            Text(
+                                text = timeToString(message.timeMs),
+                                textAlign = TextAlign.End,
+                                style = MaterialTheme.typography.subtitle1.copy(fontSize = 10.sp),
+                                color = ChatColors.TIME_TEXT,
+                            )
+                        }
+                    }
+                }
+                Box(Modifier.size(10.dp))
+            }
+            Column {
+                Triangle(false, ChatColors.MY_MESSAGE)
+            }
+        }
+    }
 }
 
 @Composable

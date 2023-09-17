@@ -42,6 +42,7 @@ kotlin {
                 implementation("com.arkivanov.decompose:decompose:2.1.0-compose-experimental-alpha-05")
                 implementation("com.arkivanov.decompose:extensions-compose-jetbrains:2.1.0-compose-experimental-alpha-05")
                 implementation("com.arkivanov.essenty:parcelable:1.1.0")
+                implementation("com.airbnb.android:lottie-compose:6.1.0")
             }
         }
         val androidMain by getting {
