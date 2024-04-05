@@ -179,11 +179,11 @@ fun SendMessage(
 @Composable
 internal inline fun Messages(messages: List<Message>) {
     val listState = rememberLazyListState()
-//    if (messages.isNotEmpty()) {
-//        LaunchedEffect(messages.last()) {
-//            listState.animateScrollToItem(messages.lastIndex, scrollOffset = 2)
-//        }
-//    }
+    if (messages.isNotEmpty()) {
+        LaunchedEffect(messages.last()) {
+            listState.animateScrollToItem(messages.lastIndex, scrollOffset = 2)
+        }
+    }
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(start = 4.dp, end = 4.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),

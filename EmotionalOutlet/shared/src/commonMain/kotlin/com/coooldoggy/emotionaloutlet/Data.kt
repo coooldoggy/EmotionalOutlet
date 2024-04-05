@@ -19,3 +19,8 @@ data class Message private constructor(
         id = Random.nextLong(),
     )
 }
+
+data class Friend(
+    val name: String,
+    val profile: String
+)
