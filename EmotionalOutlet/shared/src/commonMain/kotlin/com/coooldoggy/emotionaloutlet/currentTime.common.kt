@@ -1,23 +1,21 @@
 package com.coooldoggy.emotionaloutlet
 
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+
+
 fun timeToString(timestampMs: Long): String {
-    val seconds = timestampMs
-    val minutes = seconds / 1000 / 60
-    val hours = minutes / 24
+    // Convert milliseconds to an Instant
+    val instant = Instant.fromEpochMilliseconds(timestampMs)
 
-    val m = minutes % 60
-    val h = hours % 24
+    // Convert Instant to LocalDateTime in the system's time zone
+    val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
 
-    val mm = if (m < 10) {
-        "0$m"
-    } else {
-        m.toString()
-    }
-    val hh = if (h < 10) {
-        "0$h"
-    } else {
-        h.toString()
-    }
+    // Format hours and minutes as "HH:mm"
+    val hh = if (dateTime.hour < 10) "0${dateTime.hour}" else dateTime.hour.toString()
+    val mm = if (dateTime.minute < 10) "0${dateTime.minute}" else dateTime.minute.toString()
+
     return "$hh:$mm"
 }
 

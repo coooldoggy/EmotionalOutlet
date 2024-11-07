@@ -1,23 +1,12 @@
 package com.coooldoggy.emotionaloutlet
 
-import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.repeatable
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -45,6 +35,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -176,30 +167,6 @@ fun SendMessage(
     )
 }
 
-@Composable
-internal inline fun Messages(messages: List<Message>) {
-    val listState = rememberLazyListState()
-    if (messages.isNotEmpty()) {
-        LaunchedEffect(messages.last()) {
-            listState.animateScrollToItem(messages.lastIndex, scrollOffset = 2)
-        }
-    }
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(start = 4.dp, end = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        state = listState,
-    ) {
-        item { Spacer(Modifier.size(20.dp)) }
-        item {
-            if (messages.isNotEmpty()) {
-                ChatMessage(messages.last())
-            }
-        }
-        item {
-            Box(Modifier.height(70.dp))
-        }
-    }
-}
 
 @OptIn(ExperimentalResourceApi::class)
 @Composable
@@ -216,91 +183,127 @@ fun UserPic() {
     )
 }
 
+enum class AnimationType {
+    SCALE, FADE, SLIDE, CROSSFADE
+}
+
 @Composable
-fun ChatMessage(message: Message) {
-    var startAnimation by remember {
-        mutableStateOf(false)
-    }
+internal fun Messages(messages: List<Message>) {
+    val listState = rememberLazyListState()
 
-    var messageLayoutCoordinates by remember {
-        mutableStateOf<LayoutCoordinates?>(null)
-    }
-
-    val scale by animateFloatAsState(
-        targetValue = if (startAnimation) 0f else 1f,
-        animationSpec = repeatable(
-            iterations = 1,
-            animation = tween(durationMillis = 200, easing = LinearOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        finishedListener = {
-            //TODO FIXME 다시 나타나는 이슈
-            messageLayoutCoordinates = null
+    if (messages.isNotEmpty()) {
+        LaunchedEffect(messages.size) {
+            listState.animateScrollToItem(messages.lastIndex, scrollOffset = 2)
         }
-    )
-
-
-    LaunchedEffect(messageLayoutCoordinates) {
-        delay(300)
-        startAnimation = messageLayoutCoordinates?.isAttached == true
     }
 
-    Box(
-        modifier = Modifier.fillMaxWidth()
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            },
-        contentAlignment = Alignment.CenterEnd
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(start = 4.dp, end = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        state = listState,
     ) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Column {
-                Box(
-                    Modifier.clip(
-                        RoundedCornerShape(
-                            10.dp,
-                            10.dp,
-                            10.dp,
-                            0.dp,
-                        ),
-                    )
-                        .background(color = ChatColors.MY_MESSAGE)
-                        .padding(start = 10.dp, top = 5.dp, end = 10.dp, bottom = 5.dp)
-                        .onGloballyPositioned {
-                            messageLayoutCoordinates = it
-                        },
-                ) {
-                    Column {
-                        Spacer(Modifier.size(3.dp))
-                        Text(
-                            text = message.text,
-                            style = MaterialTheme.typography.body1.copy(
-                                fontSize = 18.sp,
-                                letterSpacing = 0.sp,
-                            ),
-                        )
-                        Spacer(Modifier.size(4.dp))
-                        Row(
-                            horizontalArrangement = Arrangement.End,
-                            modifier = Modifier.align(Alignment.End),
-                        ) {
-                            Text(
-                                text = timeToString(message.timeMs),
-                                textAlign = TextAlign.End,
-                                style = MaterialTheme.typography.subtitle1.copy(fontSize = 10.sp),
-                                color = ChatColors.TIME_TEXT,
-                            )
-                        }
-                    }
-                }
-                Box(Modifier.size(10.dp))
+        item { Spacer(Modifier.size(20.dp)) }
+
+        items(messages) { message ->
+            val shouldDisappear = remember { mutableStateOf(false) }
+            val randomAnimationType = remember { AnimationType.values().random() }
+
+            LaunchedEffect(Unit) {
+                delay(3000)
+                shouldDisappear.value = true
             }
-            Column {
-                Triangle(false, ChatColors.MY_MESSAGE)
+
+            ChatMessage(
+                message = message,
+                shouldDisappear = shouldDisappear.value,
+                animationType = randomAnimationType
+            )
+        }
+
+        item { Box(Modifier.height(70.dp)) }
+    }
+}
+
+@Composable
+fun ChatMessage(message: Message, shouldDisappear: Boolean, animationType: AnimationType) {
+    var messageWidth by remember { mutableStateOf(0) } // To store the width of each message
+    Crossfade(targetState = shouldDisappear && animationType == AnimationType.CROSSFADE) { isDisappeared ->
+        if (!isDisappeared) {
+            // Define the animated modifier based on the animation type
+            val animatedModifier = when (animationType) {
+                AnimationType.SCALE -> Modifier.graphicsLayer(
+                    scaleX = animateFloatAsState(if (shouldDisappear) 0f else 1f).value,
+                    scaleY = animateFloatAsState(if (shouldDisappear) 0f else 1f).value
+                )
+                AnimationType.FADE -> Modifier.alpha(
+                    animateFloatAsState(if (shouldDisappear) 0f else 1f).value
+                )
+                AnimationType.SLIDE -> Modifier.offset(
+                    x = animateDpAsState(
+                        if (shouldDisappear) with(LocalDensity.current) { -messageWidth.toDp() } else 0.dp
+                    ).value
+                )
+                AnimationType.CROSSFADE -> Modifier
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(animatedModifier)
+                    .onGloballyPositioned { coordinates ->
+                        messageWidth = coordinates.size.width // Capture the message width in pixels
+                    },
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                ChatMessageContent(message)
             }
         }
     }
 }
+
+@Composable
+fun ChatMessageContent(message: Message) {
+    Row(verticalAlignment = Alignment.Bottom) {
+        Column {
+            Box(
+                Modifier
+                    .clip(RoundedCornerShape(10.dp, 10.dp, 10.dp, 0.dp))
+                    .background(color = ChatColors.MY_MESSAGE)
+                    .padding(start = 10.dp, top = 5.dp, end = 10.dp, bottom = 5.dp)
+            ) {
+                Column {
+                    Spacer(Modifier.size(3.dp))
+                    Text(
+                        text = message.text,
+                        style = MaterialTheme.typography.body1.copy(
+                            fontSize = 18.sp,
+                            letterSpacing = 0.sp
+                        )
+                    )
+                    Spacer(Modifier.size(4.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.End,
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text(
+                            text = timeToString(message.timeMs),
+                            textAlign = TextAlign.End,
+                            style = MaterialTheme.typography.subtitle1.copy(fontSize = 10.sp),
+                            color = ChatColors.TIME_TEXT
+                        )
+                    }
+                }
+            }
+            Box(Modifier.size(10.dp))
+        }
+        Column {
+            Triangle(false, ChatColors.MY_MESSAGE)
+        }
+    }
+}
+
 
 @Composable
 inline fun ChatMessage(isMyMessage: Boolean, message: Message) {
