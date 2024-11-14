@@ -17,17 +17,23 @@ kotlin {
 
 android {
     namespace = "com.coooldoggy.emotionaloutlet"
-    compileSdk = 33
+    compileSdk = 34
     defaultConfig {
         applicationId = "com.coooldoggy.emotionaloutlet"
         minSdk = 26
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.5"
+    }
+    buildFeatures {
+        compose = true
     }
 }
 dependencies {

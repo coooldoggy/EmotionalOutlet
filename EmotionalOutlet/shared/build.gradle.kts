@@ -8,25 +8,26 @@ plugins {
 version = "1.0-SNAPSHOT"
 
 kotlin {
-    android()
+    androidTarget()
 
     jvm("desktop")
 
     ios()
+    iosArm64()
     iosSimulatorArm64()
 
 
-//    cocoapods {
-//        summary = "Shared code for the sample"
-//        homepage = "https://github.com/JetBrains/compose-jb"
-//        ios.deploymentTarget = "14.1"
-//        podfile = project.file("../iosApp/Podfile")
-//        framework {
-//            baseName = "shared"
-//            isStatic = true
-//        }
+    cocoapods {
+        summary = "Shared code for the sample"
+        homepage = "https://cdn.cocoapods.org"
+        ios.deploymentTarget = "14.1"
+        podfile = project.file("../iosApp/Podfile")
+        framework {
+            baseName = "shared"
+            isStatic = true
+        }
 //        extraSpecAttributes["resources"] = "['src/commonMain/resources/**', 'src/iosMain/resources/**']"
-//    }
+    }
 
     sourceSets {
         val commonMain by getting {
@@ -53,7 +54,9 @@ kotlin {
                 api("androidx.core:core-ktx:1.10.1")
             }
         }
-        val iosMain by getting
+        val iosMain by getting {
+            dependsOn(commonMain)
+        }
         val iosSimulatorArm64Main by getting {
             dependsOn(iosMain)
         }
@@ -66,14 +69,15 @@ kotlin {
 }
 
 android {
-    compileSdk = 33
+    namespace = "com.coooldoggy.emotionaloutlet"
+    compileSdk = 34
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
-    sourceSets["main"].res.srcDirs("src/androidMain/res")
-    sourceSets["main"].resources.srcDirs("src/commonMain/resources")
+//    sourceSets["main"].res.srcDirs("src/androidMain/res")
+//    sourceSets["main"].resources.srcDirs("src/commonMain/resources")
 
     defaultConfig {
         minSdk = 26
-        targetSdk = 33
+        targetSdk = 34
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

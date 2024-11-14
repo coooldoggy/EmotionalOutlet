@@ -251,6 +251,7 @@ fun ChatMessage(message: Message, shouldDisappear: Boolean, animationType: Anima
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(end = 10.dp)
                     .then(animatedModifier)
                     .onGloballyPositioned { coordinates ->
                         messageWidth = coordinates.size.width // Capture the message width in pixels
@@ -269,11 +270,11 @@ fun ChatMessageContent(message: Message) {
         Column {
             Box(
                 Modifier
-                    .clip(RoundedCornerShape(10.dp, 10.dp, 10.dp, 0.dp))
+                    .clip(RoundedCornerShape(30.dp, 30.dp, 4.dp, 30.dp))
                     .background(color = ChatColors.MY_MESSAGE)
                     .padding(start = 10.dp, top = 5.dp, end = 10.dp, bottom = 5.dp)
             ) {
-                Column {
+                Column( Modifier.padding(5.dp)) {
                     Spacer(Modifier.size(3.dp))
                     Text(
                         text = message.text,
@@ -297,9 +298,6 @@ fun ChatMessageContent(message: Message) {
                 }
             }
             Box(Modifier.size(10.dp))
-        }
-        Column {
-            Triangle(false, ChatColors.MY_MESSAGE)
         }
     }
 }
